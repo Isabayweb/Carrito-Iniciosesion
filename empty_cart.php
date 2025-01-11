@@ -9,8 +9,9 @@ if (!isset($_SESSION['usuario_id'])) {
 
 $usuario_id = $_SESSION['usuario_id'];
 
-$stmt = $pdo->prepare("DELETE FROM carritos WHERE usuario_id = :usuario_id");
-$stmt->execute(['usuario_id' => $usuario_id]);
+$stmt = $conn->prepare("DELETE FROM carritos WHERE usuario_id = ?");
+$stmt->bind_param("i", $usuario_id);
+$stmt->execute();
 
 header('Location: cart.php');
 ?>
