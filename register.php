@@ -1,28 +1,31 @@
 <?php
 include 'db.php';
 
-$error = ""; 
+$error = "";
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = $_POST['username'];
     $email = $_POST['email'];
     $password = $_POST['password'];
 
-    // Valida que no existan usuarios duplicados
-    $stmt = $pdo->prepare('SELECT COUNT(*) FROM usuarios WHERE nombre_usuario = :username OR email = :email');
-    $stmt->execute(['username' => $username, 'email' => $email]);
-    $count = $stmt->fetchColumn();
+    // Verifica si el usuario o correo ya existen
+    $stmt = $conn->prepare('SELECT COUNT(*) AS count FROM usuarios WHERE nombre_usuario = ? OR email = ?');
+    $stmt->bind_param('ss', $username, $email);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $row = $result->fetch_assoc();
 
-    if ($count > 0) {
+    if ($row['count'] > 0) {
         $error = "El nombre de usuario o correo ya está en uso.";
     } else {
         // Inserta el nuevo usuario en la base de datos
         $passwordHash = password_hash($password, PASSWORD_BCRYPT); // Encripta la contraseña
-        $stmt = $pdo->prepare('INSERT INTO usuarios (nombre_usuario, email, contraseña) VALUES (:username, :email, :password)');
-        $stmt->execute(['username' => $username, 'email' => $email, 'password' => $passwordHash]);
+        $stmt = $conn->prepare('INSERT INTO usuarios (nombre_usuario, email, contraseña) VALUES (?, ?, ?)');
+        $stmt->bind_param('sss', $username, $email, $passwordHash);
+        $stmt->execute();
 
         // Recuperar el ID del nuevo usuario
-        $userId = $pdo->lastInsertId();
+        $userId = $stmt->insert_id;
 
         // Iniciar sesión automáticamente
         session_start();
@@ -30,11 +33,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['nombre_usuario'] = $username;
 
         // Redirigir a una página de bienvenida o el panel de usuario
-        header('Location: index.php'); // o donde quieras redirigir al usuario
+        header('Location: index.php');
         exit();
     }
+
+    $stmt->close();
 }
 ?>
+
 
 
 
