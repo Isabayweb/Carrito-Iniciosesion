@@ -16,16 +16,27 @@
 session_start();
 require 'db.php';
 
-$error ="";
+$error = "";
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = $_POST['username'];
     $password = $_POST['password'];
 
-    // Consulta al usuario
-    $stmt = $pdo->prepare('SELECT * FROM usuarios WHERE nombre_usuario = :username');
-    $stmt->execute(['username' => $username]);
-    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    // Asegúrate de que el campo de usuario no esté vacío
+    if (empty($username)) {
+        die("El nombre de usuario no se envió correctamente.");
+    }
+
+    // Consulta al usuario con MySQLi
+    $stmt = $conn->prepare('SELECT * FROM usuarios WHERE nombre_usuario = ?');
+    if (!$stmt) {
+        die("Error al preparar la consulta: " . $conn->error);
+    }
+
+    $stmt->bind_param('s', $username);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $user = $result->fetch_assoc();
 
     // Verifica la contraseña
     if ($user && password_verify($password, $user['contraseña'])) {
@@ -35,10 +46,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header('Location: index.php'); // Redirige al área de usuario
         exit();
     } else {
-       $error = "Nombre de usuario o contraseña incorrectos.";
+        $error = "Nombre de usuario o contraseña incorrectos.";
     }
+
+    $stmt->close();
 }
 ?>
+
 
 
        <? include 'header.php'?>
