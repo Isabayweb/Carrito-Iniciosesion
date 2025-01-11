@@ -1,8 +1,3 @@
-
-
-
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -16,61 +11,61 @@
 
 </head>
 <body>
-      <? include 'header.php'?>  
-
-
+    <? include 'header.php'?> 
       <main>
 
     <div class="contenedor-cart">
 
-      <?php
-       session_start();
-       require 'db.php';
-       
-       if (!isset($_SESSION['usuario_id'])) {
-           header('Location: login.php');
-           exit();
-       }
-       
-       $usuario_id = $_SESSION['usuario_id'];
-       
-       echo "<h1>Tu Carrito</h1>";
-       
-       $totalPrice = 0;
-       
-       // Obtén los productos del carrito del usuario desde la base de datos
-       $stmt = $pdo->prepare("
-           SELECT p.id, p.name, p.price, p.image, c.cantidad
-           FROM carritos c
-           INNER JOIN products p ON c.producto_id = p.id
-           WHERE c.usuario_id = :usuario_id
-       ");
-       $stmt->execute(['usuario_id' => $usuario_id]);
-       $cart_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
-       
-       if ($cart_items) {
-           foreach ($cart_items as $item) {
-               $total = $item['price'] * $item['cantidad'];
-               $totalPrice += $total;
-       
-               echo "<div class='cart custom-class'>";
-               echo "<img src='images/" . $item["image"] . "' alt='" . $item["name"] . "' style='width:100px;height:auto;'>";
-               echo "<h2>" . $item["name"] . "</h2>";
-               echo "<p> x " . $item["cantidad"] . " </p>";
-               echo "<a href='remove_from_cart.php?id=" . $item["id"] . "'><i class='bx bxs-trash'></i></a>";
-               echo "</div>";
-           }
-           echo "<div class='cart2 custom-class'>";
-           echo "<p>Total: $" . $totalPrice . "</p>";
-           echo "<a href='empty_cart.php'>Vaciar Carrito</a>";
-           echo "<form action='send_order.php' method='post'>";
-           echo "<input type='submit' value='Enviar Pedido'> " ;
-           echo "</form>";
-           echo "</div>";
-       } else {
-           echo "El carrito está vacío.";
-       }
-       ?>
+    <?php
+session_start();
+require 'db.php';
+
+if (!isset($_SESSION['usuario_id'])) {
+    header('Location: login.php');
+    exit();
+}
+
+$usuario_id = $_SESSION['usuario_id'];
+
+echo "<h1>Tu Carrito</h1>";
+
+$totalPrice = 0;
+
+// Obtén los productos del carrito del usuario desde la base de datos
+$stmt = $conn->prepare("
+    SELECT p.id, p.name, p.price, p.image, c.cantidad
+    FROM carritos c
+    INNER JOIN products p ON c.producto_id = p.id
+    WHERE c.usuario_id = ?
+");
+$stmt->bind_param("i", $usuario_id);
+$stmt->execute();
+$result = $stmt->get_result();
+
+if ($result->num_rows > 0) {
+    while ($item = $result->fetch_assoc()) {
+        $total = $item['price'] * $item['cantidad'];
+        $totalPrice += $total;
+
+        echo "<div class='cart custom-class'>";
+        echo "<img src='images/" . $item["image"] . "' alt='" . $item["name"] . "' style='width:100px;height:auto;'>";
+        echo "<h2>" . $item["name"] . "</h2>";
+        echo "<p> x " . $item["cantidad"] . " </p>";
+        echo "<a href='remove_from_cart.php?id=" . $item["id"] . "'><i class='bx bxs-trash'></i></a>";
+        echo "</div>";
+    }
+         echo "<div class='cart2 custom-class'>";
+         echo "<p>Total: $" . $totalPrice . "</p>";
+         echo "<a href='empty_cart.php'>Vaciar Carrito</a>";
+         echo "<form action='send_order.php' method='post'>";
+         echo "<input type='submit' value='Enviar Pedido'> ";
+         echo "</form>";
+         echo "</div>";
+} else {
+    echo "El carrito está vacío.";
+}
+?>
+
        
       
 </div>
