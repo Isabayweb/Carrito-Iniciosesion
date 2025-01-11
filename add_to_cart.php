@@ -13,20 +13,26 @@ if (isset($_GET['id'])) {
     $usuario_id = $_SESSION['usuario_id'];
 
     // Verifica si el producto ya está en el carrito del usuario
-    $stmt = $pdo->prepare("SELECT cantidad FROM carritos WHERE usuario_id = :usuario_id AND producto_id = :producto_id");
-    $stmt->execute(['usuario_id' => $usuario_id, 'producto_id' => $producto_id]);
-    $cart_item = $stmt->fetch(PDO::FETCH_ASSOC);
+    $stmt = $conn->prepare("SELECT cantidad FROM carritos WHERE usuario_id = ? AND producto_id = ?");
+    $stmt->bind_param("ii", $usuario_id, $producto_id);
+    $stmt->execute();
+    $stmt->store_result();
+    $stmt->bind_result($cantidad);
+    $stmt->fetch();
 
-    if ($cart_item) {
+    if ($stmt->num_rows > 0) {
         // Si ya existe, incrementa la cantidad
-        $stmt = $pdo->prepare("UPDATE carritos SET cantidad = cantidad + 1 WHERE usuario_id = :usuario_id AND producto_id = :producto_id");
-        $stmt->execute(['usuario_id' => $usuario_id, 'producto_id' => $producto_id]);
+        $stmt = $conn->prepare("UPDATE carritos SET cantidad = cantidad + 1 WHERE usuario_id = ? AND producto_id = ?");
+        $stmt->bind_param("ii", $usuario_id, $producto_id);
+        $stmt->execute();
     } else {
         // Si no existe, agrega el producto al carrito
-        $stmt = $pdo->prepare("INSERT INTO carritos (usuario_id, producto_id, cantidad) VALUES (:usuario_id, :producto_id, 1)");
-        $stmt->execute(['usuario_id' => $usuario_id, 'producto_id' => $producto_id]);
+        $stmt = $conn->prepare("INSERT INTO carritos (usuario_id, producto_id, cantidad) VALUES (?, ?, 1)");
+        $stmt->bind_param("ii", $usuario_id, $producto_id);
+        $stmt->execute();
     }
 }
 
 header('Location: productos.php');
 ?>
+
